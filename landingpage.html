@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rolling Ball Game</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+            background: url('https://as1.ftcdn.net/v2/jpg/01/91/74/46/1000_F_191744672_HYfG0261FemsGK5WZWX868BokvbHNmqV.jpg') no-repeat center center fixed;
+            background-size: cover;
+            opacity: 0.7;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 100%);
+        }
+
+        .heart {
+            color: red;
+            font-size: 24px;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+        }
+
+        #gameOverPopup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 30%;
+            width: 40%;
+            height: 40%;
+            background: rgba(0, 0, 0, 0.6);
+            color: red;
+            text-align: center;
+            border-radius: 15px;
+            padding-top: 10%;
+            font-size: 4em;
+            transition: visibility 0s, opacity 0.5s linear;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="vignette"></div>
+    <div class="heart">❤️❤️❤️❤️</div>
+    <div id="gameOverPopup">GAME OVER</div>
+
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        var ballRadius = 15;
+        var x = canvas.width / 2;
+        var y = canvas.height / 2;
+        var speed = 5;
+        var rightPressed = false;
+        var leftPressed = false;
+        var upPressed = false;
+        var downPressed = false;
+        var health = 4;
+        var obstacles = [];
+        var gameOver = false;
+        var obstacleImage = new Image();
+        obstacleImage.src = 'bomb-image-url'; // Replace with the path to the bomb image
+
+        function createObstacle() {
+            var size = Math.random() * (36 - 12) + 12; // 20% bigger
+            var positionX = Math.random() * (canvas.width - size);
+            var positionY = Math.random() * (canvas.height - size);
+            obstacles.push({ x: positionX, y: positionY, size: size });
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(function (obstacle) {
+                ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.size, obstacle.size);
+            });
+        }
+
+        function checkCollision() {
+            obstacles.forEach(function (obstacle) {
+                var dx = x - (obstacle.x + obstacle.size / 2);
+                var dy = y - (obstacle.y + obstacle.size / 2);
+                var distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < ballRadius + obstacle.size / 2) {
+                    health -= 1;
+                    updateHealthDisplay();
+                    resetBall();
+                    if (health <= 0) {
+                        gameOver = true;
+                        document.getElementById('gameOverPopup').style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        function updateHealthDisplay() {
+            var hearts = '';
+            for (var i = 0; i < health; i++) {
+                hearts += '❤️';
+            }
+            document.querySelector('.heart').innerHTML = hearts;
+        }
+
+        function resetBall() {
+            x = canvas.width / 2;
+            y = canvas.height / 2;
+        }
+
+        function drawBall() {
+            if (!gameOver) {
+                ctx.beginPath();
+                ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "black";
+                ctx.closePath();
+            }
+        }
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        function keyDownHandler(e) {
+            if (!gameOver) {
+                if (e.key === "Right" || e.key === "ArrowRight") {
+                    rightPressed = true;
+                }
+                else if (e.key === "Left" || e.key === "ArrowLeft") {
+                    leftPressed = true;
+                }
+                else if (e.key === "Up" || e.key === "ArrowUp") {
+                    upPressed = true;
+                }
+                else if (e.key === "Down" || e.key === "ArrowDown") {
+                    downPressed = true;
+                }
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (!gameOver) {
+                if (e.key === "Right" || e.key === "ArrowRight") {
+                    rightPressed = false;
+                }
+                else if (e.key === "Left" || e.key === "ArrowLeft") {
+                    leftPressed = false;
+                }
+                else if (e.key === "Up" || e.key === "ArrowUp") {
+                    upPressed = false;
+                }
+                else if (e.key === "Down" || e.key === "ArrowDown") {
+                    downPressed = false;
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBall();
+            drawObstacles();
+            checkCollision();
+
+            if (!gameOver) {
+                if (rightPressed) {
+                    x += speed;
+                }
+                if (leftPressed) {
+                    x -= speed;
+                }
+                if (upPressed) {
+                    y -= speed;
+                }
+                if (downPressed) {
+                    y += speed;
+                }
+            }
+
+            x = Math.max(ballRadius, Math.min(canvas.width - ballRadius, x));
+            y = Math.max(ballRadius, Math.min(canvas.height - ballRadius, y));
+
+            requestAnimationFrame(draw);
+        }
+
+        setInterval(createObstacle, 2000);
+
+        draw();
+    </script>
+</body>
+</html>
+    
